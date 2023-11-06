@@ -47,7 +47,7 @@ fi
 ###########################################
 
 logger "DDNS Updater: Check Initiated"
-record=$(curl --write-out "%{http_code}" -s -f -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?type=A&name=$record_name" \
+record=$(curl --write-out "%{http_code}" --connect-timeout 5 -s -f -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?type=A&name=$record_name" \
                       -H "X-Auth-Email: $auth_email" \
                       -H "$auth_header $auth_key" \
                       -H "Content-Type: application/json")
