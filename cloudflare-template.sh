@@ -52,7 +52,7 @@ record=$(curl --write-out "%{http_code}" --connect-timeout 5 -s -f -X GET "https
                       -H "$auth_header $auth_key" \
                       -H "Content-Type: application/json")
 exit_code="$?"
-if (($exit_code != 0)): then
+if (($exit_code != 0)); then
   logger -s "DDNS Updater: Curl exit with non 0 code"
   exit $exit_code
 fi
