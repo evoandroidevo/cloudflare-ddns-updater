@@ -47,10 +47,22 @@ fi
 ###########################################
 
 logger "DDNS Updater: Check Initiated"
-record=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?type=A&name=$record_name" \
+record=$(curl --write-out "%{http_code}" -s -f -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?type=A&name=$record_name" \
                       -H "X-Auth-Email: $auth_email" \
                       -H "$auth_header $auth_key" \
                       -H "Content-Type: application/json")
+exit_code="$?"
+if (($exit_code != 0)): then
+  logger -s "DDNS Updater: Curl exit with non 0 code"
+  exit $exit_code
+fi
+
+record_status=$(echo $record | tail -c 4)
+
+if (( $record_status >= 400 && $record_status <= 530 )); then
+  logger -s "DDNS Updater: Error while checking record identifier!"
+  exit 1
+fi
 
 ###########################################
 ## Check if the domain has an A record
@@ -65,9 +77,12 @@ fi
 ###########################################
 old_ip=$(echo "$record" | sed -E 's/.*"content":"(([0-9]{1,3}\.){3}[0-9]{1,3})".*/\1/')
 # Compare if they're the same
-if [[ $ip == $old_ip ]]; then
-  logger "DDNS Updater: IP ($ip) for ${record_name} has not changed."
-  exit 0
+if [[ $old_ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then # <== NEW
+        # Compare if they're the same
+        if [[ $ip == $old_ip ]]; then
+        logger "DDNS Updater: IP ($ip) for ${record_name} has not changed."
+        exit 0
+        fi
 fi
 
 ###########################################
